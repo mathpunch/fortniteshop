@@ -1,1 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fortnite Item Shop</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 3em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+        }
+
+        .last-updated {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.5em;
+            margin-top: 50px;
+        }
+
+        .error {
+            background: #ff4444;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 600px;
+            margin: 50px auto;
+        }
+
+        .shop-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .item-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+
+        .item-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        }
+
+        .item-image {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .item-content {
+            padding: 15px;
+        }
+
+        .item-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .item-description {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .item-price {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .rarity-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-top: 8px;
+        }
+
+        .rarity-common { background: #b0b0b0; color: white; }
+        .rarity-uncommon { background: #5ebc5e; color: white; }
+        .rarity-rare { background: #4a9eff; color: white; }
+        .rarity-epic { background: #b458ff; color: white; }
+        .rarity-legendary { background: #ffa033; color: white; }
+        .rarity-mythic { background: #ffeb3b; color: #333; }
+        .rarity-icon { background: #29ddb4; color: white; }
+
+        .refresh-btn {
+            display: block;
+            margin: 20px auto;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            font-weight: bold;
+            background: white;
+            color: #667eea;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+            
+            .shop-grid {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎮 Fortnite Item Shop</h1>
+            <div class="last-updated" id="lastUpdated"></div>
+        </header>
+
+        <div id="content">
+            <div class="loading">Loading shop items...</div>
+        </div>
+
+        <button class="refresh-btn" onclick="loadShop()" style="display: none;" id="refreshBtn">
+            🔄 Refresh Shop
+        </button>
+    </div>
+
+    <script>
+        async function loadShop() {
+            const content = document.getElementById('content');
+            const lastUpdated = document.getElementById('lastUpdated');
+            const refreshBtn = document.getElementById('refreshBtn');
+            
+            content.innerHTML = '<div class="loading">Loading shop items...</div>';
+            refreshBtn.style.display = 'none';
+
+            try {
+                const response = await fetch('https://fortnite-api.com/v2/shop');
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch shop data');
+                }
+
+                const data = await response.json();
+                
+                if (!data.data || !data.data.entries) {
+                    throw new Error('Invalid shop data received');
+                }
+
+                const entries = data.data.entries;
+                lastUpdated.textContent = `Last Updated: ${new Date(data.data.date).toLocaleString()}`;
+
+                let html = '<div class="shop-grid">';
+                
+                entries.forEach(entry => {
+                    const item = entry.items?.[0];
+                    if (!item) return;
+
+                    const name = item.name || 'Unknown Item';
+                    const description = item.description || 'No description available';
+                    const price = entry.finalPrice || 0;
+                    const rarity = item.rarity?.value || 'common';
+                    const image = item.images?.icon || item.images?.featured || '';
+
+                    html += `
+                        <div class="item-card">
+                            ${image ? `<img src="${image}" alt="${name}" class="item-image">` : '<div class="item-image"></div>'}
+                            <div class="item-content">
+                                <div class="item-name">${name}</div>
+                                <div class="item-description">${description}</div>
+                                <div class="item-price">
+                                    <span>💎</span>
+                                    <span>${price.toLocaleString()} V-Bucks</span>
+                                </div>
+                                <span class="rarity-badge rarity-${rarity}">${rarity}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+                content.innerHTML = html;
+                refreshBtn.style.display = 'block';
+
+            } catch (error) {
+                content.innerHTML = `
+                    <div class="error">
+                        <h2>⚠️ Error Loading Shop</h2>
+                        <p>${error.message}</p>
+                        <p>Please try again later.</p>
+                    </div>
+                `;
+                refreshBtn.style.display = 'block';
+            }
+        }
+
+        // Load shop on page load
+        loadShop();
+    </script>
+</body>
+</html>
