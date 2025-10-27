@@ -100,6 +100,7 @@
             font-size: 0.9em;
             color: #666;
             margin-bottom: 10px;
+            min-height: 40px;
         }
 
         .item-price {
@@ -112,6 +113,16 @@
             margin-bottom: 8px;
         }
 
+        .discount {
+            text-decoration: line-through;
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .final-price {
+            color: #ff4444;
+        }
+
         .rarity-badge {
             display: inline-block;
             padding: 5px 12px;
@@ -122,6 +133,17 @@
             margin-top: 8px;
         }
 
+        .type-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            background: #555;
+            color: white;
+            margin-right: 5px;
+            margin-top: 8px;
+        }
+
         .rarity-common { background: #b0b0b0; color: white; }
         .rarity-uncommon { background: #5ebc5e; color: white; }
         .rarity-rare { background: #4a9eff; color: white; }
@@ -129,6 +151,7 @@
         .rarity-legendary { background: #ffa033; color: white; }
         .rarity-mythic { background: #ffeb3b; color: #333; }
         .rarity-icon { background: #29ddb4; color: white; }
+        .rarity-dark { background: #ce00ae; color: white; }
 
         .refresh-btn {
             display: block;
@@ -148,6 +171,16 @@
         .refresh-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .bundle-tag {
+            background: #ff6b6b;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            margin-bottom: 8px;
+            display: inline-block;
         }
 
         @media (max-width: 768px) {
@@ -206,25 +239,34 @@
                 let html = '<div class="shop-grid">';
                 
                 entries.forEach(entry => {
-                    const item = entry.items?.[0];
-                    if (!item) return;
+                    // Get the first BR item if available
+                    const brItems = entry.brItems || [];
+                    if (brItems.length === 0) return;
 
-                    const name = item.name || 'Unknown Item';
-                    const description = item.description || 'No description available';
-                    const price = entry.finalPrice || 0;
+                    const item = brItems[0];
+                    const name = item.name || entry.bundle?.name || 'Unknown Item';
+                    const description = item.description || entry.bundle?.info || 'No description available';
+                    const regularPrice = entry.regularPrice || 0;
+                    const finalPrice = entry.finalPrice || 0;
+                    const hasDiscount = regularPrice !== finalPrice;
                     const rarity = item.rarity?.value || 'common';
-                    const image = item.images?.icon || item.images?.featured || '';
+                    const type = item.type?.displayValue || '';
+                    const image = item.images?.featured || item.images?.icon || entry.bundle?.image || entry.newDisplayAsset?.renderImages?.[0]?.image || '';
+                    const isBundle = entry.bundle ? true : false;
 
                     html += `
                         <div class="item-card">
-                            ${image ? `<img src="${image}" alt="${name}" class="item-image">` : '<div class="item-image"></div>'}
+                            ${image ? `<img src="${image}" alt="${name}" class="item-image" onerror="this.style.display='none'">` : '<div class="item-image"></div>'}
                             <div class="item-content">
+                                ${isBundle ? '<span class="bundle-tag">BUNDLE</span>' : ''}
                                 <div class="item-name">${name}</div>
                                 <div class="item-description">${description}</div>
                                 <div class="item-price">
                                     <span>💎</span>
-                                    <span>${price.toLocaleString()} V-Bucks</span>
+                                    ${hasDiscount ? `<span class="discount">${regularPrice.toLocaleString()}</span>` : ''}
+                                    <span class="${hasDiscount ? 'final-price' : ''}">${finalPrice.toLocaleString()} V-Bucks</span>
                                 </div>
+                                ${type ? `<span class="type-badge">${type}</span>` : ''}
                                 <span class="rarity-badge rarity-${rarity}">${rarity}</span>
                             </div>
                         </div>
